@@ -1,39 +1,51 @@
 ﻿#include <iostream>
+#include <ctime>
 #include <omp.h>
-// Задаем 6 потоков
-#define NUM_THREADS 6
+#include <chrono>
+// Задаем 5 потоков
+#define NUM_THREADS 5
 
 using namespace std;
 
 // Последовательный алгоритм умножения матрицы на вектор
-void mult_matrix_vector_serial(double** matrix, double* vector, double* result, int rows, int cols) {
+double* mult_matrix_vector_serial(double** matrix, double* vector, int rows, int cols) {
+    double* result = new double[rows];
+
     for (int i = 0; i < rows; i++) {
         result[i] = 0.0;
         for (int j = 0; j < cols; j++) {
             result[i] += matrix[i][j] * vector[j];
         }
     }
+
+    return result;
 }
 
 // Распараллеливания циклов с директивой for
-void mult_matrix_vertor_parralel_for(double** matrix, double* vector, double* result, int rows, int cols) {
-#pragma omp parallel for num_threads(NUM_THREADS)
+double* mult_matrix_vertor_parallel_for(double** matrix, double* vector, int rows, int cols) {
+    double* result = new double[rows];
+
+    #pragma omp parallel for num_threads(NUM_THREADS)
     for (int i = 0; i < rows; i++) {
         result[i] = 0.0;
         for (int j = 0; j < cols; j++) {
             result[i] += matrix[i][j] * vector[j];
         }
     }
+
+    return result;
 }
 
 // Распараллеливания циклов без директивы for (использование директивы sections) - “ручное” задание работ
-void mult_matrix_vertor_parralel_manual(double** matrix, double* vector, double* result, int rows, int cols) {
+double* mult_matrix_vertor_parallel_manual(double** matrix, double* vector, int rows, int cols) {
+    double* result = new double[rows];
+
 // 6 секций потому что мы задали 6 потоков
 #pragma omp parallel sections
     {
 #pragma omp section
         {
-            for (int i = 0; i < rows / 6; i++) {
+            for (int i = 0; i < rows / 5; i++) {
                 result[i] = 0.0;
                 for (int j = 0; j < cols; j++) {
                     result[i] += matrix[i][j] * vector[j];
@@ -42,7 +54,7 @@ void mult_matrix_vertor_parralel_manual(double** matrix, double* vector, double*
         }
 #pragma omp section
         {
-            for (int i = rows / 6; i < 2 * rows / 6; i++) {
+            for (int i = rows / 5; i < 2 * rows / 5; i++) {
                 result[i] = 0.0;
                 for (int j = 0; j < cols; j++) {
                     result[i] += matrix[i][j] * vector[j];
@@ -51,7 +63,7 @@ void mult_matrix_vertor_parralel_manual(double** matrix, double* vector, double*
         }
 #pragma omp section
         {
-            for (int i = 2 * rows / 6; i < 3 * rows / 6; i++) {
+            for (int i = 2 * rows / 5; i < 3 * rows / 5; i++) {
                 result[i] = 0.0;
                 for (int j = 0; j < cols; j++) {
                     result[i] += matrix[i][j] * vector[j];
@@ -60,7 +72,7 @@ void mult_matrix_vertor_parralel_manual(double** matrix, double* vector, double*
         }
 #pragma omp section
         {
-            for (int i = 3 * rows / 6; i < 4 * rows / 6; i++) {
+            for (int i = 3 * rows / 5; i < 4 * rows / 5; i++) {
                 result[i] = 0.0;
                 for (int j = 0; j < cols; j++) {
                     result[i] += matrix[i][j] * vector[j];
@@ -69,16 +81,7 @@ void mult_matrix_vertor_parralel_manual(double** matrix, double* vector, double*
         }
 #pragma omp section
         {
-            for (int i = 4 * rows / 6; i < 5 * rows / 6; i++) {
-                result[i] = 0.0;
-                for (int j = 0; j < cols; j++) {
-                    result[i] += matrix[i][j] * vector[j];
-                }
-            }
-        }
-#pragma omp section
-        {
-            for (int i = 5 * rows / 6; i < rows; i++) {
+            for (int i = 4 * rows / 5; i < rows; i++) {
                 result[i] = 0.0;
                 for (int j = 0; j < cols; j++) {
                     result[i] += matrix[i][j] * vector[j];
@@ -86,11 +89,15 @@ void mult_matrix_vertor_parralel_manual(double** matrix, double* vector, double*
             }
         }
     }
+
+    return result;
 }
 
 int main() {
-    int rows = 100;
-    int cols = 100;
+    setlocale(LC_ALL, "Russain");
+
+    int rows = 5000;
+    int cols = 5000;
 
     // Создаем матрицу с рандомными значениями
     double** matrix = new double* [rows];
@@ -107,13 +114,33 @@ int main() {
         vector[i] = rand();
     }
 
-    double* serial_result = new double[rows];            // Результат для последовательного алгоритма
-    double* parralel_for_result = new double[rows];      // Результат при распараллеливании циклов с директивой for
-    double* parralel_manual_result = new double[rows];   // Распараллеливании циклов без директивы for
+    chrono::steady_clock::time_point start, stop;
+    std::chrono::duration<double> duration;
+    double serial_time, parallel_for_time, parallel_manual_time;
 
-    mult_matrix_vector_serial(matrix, vector, serial_result, rows, cols);
-    mult_matrix_vertor_parralel_for(matrix, vector, parralel_for_result, rows, cols);
-    mult_matrix_vertor_parralel_manual(matrix, vector, parralel_manual_result, rows, cols);
+
+    // Результат для последовательного алгоритма
+    start = chrono::high_resolution_clock::now();
+    double* serial_result = mult_matrix_vector_serial(matrix, vector, rows, cols);
+    stop = chrono::high_resolution_clock::now();
+    duration = stop - start;
+    serial_time = duration.count();
+    // Результат при распараллеливании циклов с директивой for
+    start = chrono::high_resolution_clock::now();
+    double* parallel_for_result = mult_matrix_vertor_parallel_for(matrix, vector, rows, cols);
+    stop = chrono::high_resolution_clock::now();
+    duration = stop - start;
+    parallel_for_time = duration.count();
+    // Распараллеливании циклов без директивы for
+    start = chrono::high_resolution_clock::now();
+    double* parallel_manual_result = mult_matrix_vertor_parallel_manual(matrix, vector, rows, cols);
+    stop = chrono::high_resolution_clock::now();
+    duration = stop - start;
+    parallel_manual_time = duration.count();
+
+    cout << "Running time of the sequential algorithm: " << serial_time << " seconds" << endl;
+    cout << "Running time with directive for: " << parallel_for_time << " seconds" << endl;
+    cout << "Running time without directive for: " << parallel_manual_time << " seconds" << endl;
 
     for (int i = 0; i < rows; i++) {
         delete[] matrix[i];
@@ -121,8 +148,8 @@ int main() {
     delete[] matrix;
     delete[] vector;
     delete[] serial_result;
-    delete[] parralel_for_result;
-    delete[] parralel_manual_result;
+    delete[] parallel_for_result;
+    delete[] parallel_manual_result;
 
     return 0;
 }
