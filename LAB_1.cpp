@@ -94,8 +94,6 @@ double* mult_matrix_vertor_parallel_manual(double** matrix, double* vector, int 
 }
 
 int main() {
-    setlocale(LC_ALL, "Russain");
-
     int rows = 5000;
     int cols = 5000;
 
