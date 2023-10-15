@@ -102,14 +102,14 @@ int main() {
     for (int i = 0; i < rows; i++) {
         matrix[i] = new double[cols];
         for (int j = 0; j < cols; j++) {
-            matrix[i][j] = rand();
+            matrix[i][j] = rand() / 1000;
         }
     }
 
     // Создаем вектор с рандомными значениями
     double* vector = new double[cols];
     for (int i = 0; i < cols; i++) {
-        vector[i] = rand();
+        vector[i] = rand() / 1000;
     }
 
     chrono::steady_clock::time_point start, stop;
