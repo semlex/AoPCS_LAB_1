@@ -28,7 +28,7 @@ double* mult_matrix_vector_serial(double** matrix, double* vector, int rows, int
 double* mult_matrix_vertor_parallel_for(double** matrix, double* vector, int rows, int cols) {
     double* result = new double[rows];
 
-    // Цикл выплняется несколькими потоками параллельно (число потоков задается в NUM_THEADS)
+    // Цикл выполняется несколькими потоками параллельно (число потоков задается в NUM_THEADS)
     #pragma omp parallel for num_threads(NUM_THREADS)
     for (int i = 0; i < rows; i++) {
         result[i] = 0.0;
