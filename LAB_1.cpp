@@ -48,7 +48,6 @@ double* mult_matrix_vertor_parallel_manual(double** matrix, double* vector, int 
 // для равномерного распределения данных по потокам)
 #pragma omp parallel sections
     {
-// В каждой секции разделяем данные равномерно по 5 потокам
 #pragma omp section
         {
             // Цикл идет от 0 до rows / 5 потому что мы равномерно разделяем данные на 5 потоков
