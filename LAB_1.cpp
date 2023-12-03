@@ -1,9 +1,12 @@
-﻿#include <iostream>
+﻿// Алгоритм умножения матрицы на вектор
+
+#include <iostream>
 #include <ctime>
 #include <omp.h>
 #include <chrono>
+
 // Задаем 5 потоков
-#define NUM_THREADS 5
+#define NUM_THREADS 5;
 
 using namespace std;
 
@@ -21,7 +24,7 @@ double* mult_matrix_vector_serial(double** matrix, double* vector, int rows, int
     return result;
 }
 
-// Распараллеливания циклов с директивой for
+// Распараллеливание циклов с директивой for
 double* mult_matrix_vertor_parallel_for(double** matrix, double* vector, int rows, int cols) {
     double* result = new double[rows];
 
@@ -40,11 +43,15 @@ double* mult_matrix_vertor_parallel_for(double** matrix, double* vector, int row
 double* mult_matrix_vertor_parallel_manual(double** matrix, double* vector, int rows, int cols) {
     double* result = new double[rows];
 
-// 6 секций потому что мы задали 6 потоков
+// 5 секций потому что мы задали 5 потоков (при мзменении числа потоков
+// необходимо изменить число секций, а также переписать циклы внутри секций
+// для равномерного распределения данных по потокам)
 #pragma omp parallel sections
     {
+// В каждой секции разделяем данные равномерно по 5 потокам
 #pragma omp section
         {
+            // Цикл идет от 0 до rows / 5 потому что мы равномерно разделяем данные на 5 потоков
             for (int i = 0; i < rows / 5; i++) {
                 result[i] = 0.0;
                 for (int j = 0; j < cols; j++) {
@@ -94,8 +101,10 @@ double* mult_matrix_vertor_parallel_manual(double** matrix, double* vector, int 
 }
 
 int main() {
-    int rows = 5000;
-    int cols = 5000;
+    // Число строк
+    int rows = 1000;
+    // Число столбцов
+    int cols = 1000;
 
     // Создаем матрицу с рандомными значениями
     double** matrix = new double* [rows];
@@ -112,9 +121,16 @@ int main() {
         vector[i] = rand() / 1000;
     }
 
+    // Переменные для замера времени
     chrono::steady_clock::time_point start, stop;
     std::chrono::duration<double> duration;
-    double serial_time, parallel_for_time, parallel_manual_time;
+
+    // Время выполнения последовательного алгоритма
+    double serial_time;
+    // Время выполнения алгоритма с распараллеливанием циклов с директивой for
+    double parallel_for_time;
+    // Время выполнения алгоритма с распараллеливанием циклов без директивы for
+    double parallel_manual_time;
 
 
     // Результат для последовательного алгоритма
@@ -140,6 +156,7 @@ int main() {
     cout << "Running time with directive for: " << parallel_for_time << " seconds" << endl;
     cout << "Running time without directive for: " << parallel_manual_time << " seconds" << endl;
 
+    // Очищаем память
     for (int i = 0; i < rows; i++) {
         delete[] matrix[i];
     }
