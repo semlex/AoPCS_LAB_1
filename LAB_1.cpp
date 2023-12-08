@@ -6,7 +6,7 @@
 #include <chrono>
 
 // Задаем 5 потоков
-#define NUM_THREADS 5;
+#define NUM_THREADS 4
 
 using namespace std;
 
@@ -102,9 +102,9 @@ double* mult_matrix_vertor_parallel_manual(double** matrix, double* vector, int 
 
 int main() {
     // Число строк
-    int rows = 1000;
+    int rows = 10000;
     // Число столбцов
-    int cols = 1000;
+    int cols = 10000;
 
     // Создаем матрицу с рандомными значениями
     double** matrix = new double* [rows];
